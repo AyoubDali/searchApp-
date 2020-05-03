@@ -141,7 +141,7 @@ services:
       
   searchappfront:
     hostname: searchappfront
-    image: ayoubdali/frontservice:0.4.8
+    image: ayoubdali/frontservice:0.5.0
     container_name: searchappfront
     networks:
       - es-network
