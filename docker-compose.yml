@@ -123,12 +123,16 @@ services:
     restart: always
     depends_on:
       - elasticsearch
-
-
+      - reverseproxy
+    labels:
+      - "traefik.frontend.rule: PathPrefixStrip:/subscriber"
+      - "traefik.port: 8080"
+  
   subscriber-service:
     hostname: subscriber-service
     image: ayoubdali/subscriberservice:0.0.4-SNAPSHOT
     container_name: subscriber-service
+    
     networks:
       - es-network 
           #ipv4_address: 172.21.0.13
@@ -138,21 +142,42 @@ services:
     depends_on:
       - mongo1
       - mongo2
-      
+      - reverseproxy
+    labels:
+      - "traefik.frontend.rule: PathPrefixStrip:localhost/api"
+      - "traefik.port: 8090"
+
+
+
+
+
   searchappfront:
     hostname: searchappfront
-    image: ayoubdali/frontservice:0.5.0
+    image: ayoubdali/frontservice:0.6.0
     container_name: searchappfront
     networks:
       - es-network
-    ports:
-      - 4200:80
+    #ports:
+    #  - 80:80
     restart: always
     depends_on:
       - subscriber-service
       - searchservice
+      - reverseproxy
+    labels:
+      - "traefik.frontend.rule=PathPrefix:/"
+      - "traefik.enable=true"
+      - "traefik.port=80"
    
-      
+  reverseproxy:  # see https://docs.traefik.io/#the-traefik-quickstart-using-docker
+    image: traefik:v1.4
+    command: --docker
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - es-network  
   # MongoDB Replica Set
   mongo1:
     hostname: mongo1
