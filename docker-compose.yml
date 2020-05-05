@@ -10,6 +10,7 @@ services:
     networks:
       - es-network  
 
+  
   zookeeper:
     image: confluentinc/cp-zookeeper:5.0.0
     hostname: zookeeper
@@ -17,11 +18,12 @@ services:
     ports:
       - 2181:2181
     networks:
-      - es-network  
+      - es-network   
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
+  
 
   kafka:
     image: confluentinc/cp-kafka:5.0.0
@@ -33,7 +35,7 @@ services:
       - 29092:29092
       - 9092:9092
     networks:
-      - es-network
+      - es-network 
     environment:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
@@ -46,7 +48,7 @@ services:
     hostname: schema-registry
     container_name: schema-registry
     networks:
-      - es-network
+      - es-network 
     ports:
       - 8081:8081
     environment:
@@ -55,13 +57,14 @@ services:
     depends_on:
       - zookeeper
       - kafka
-
+ 
+  
   kafka-connect:
     image: ayoubdali/kafka-connect
     hostname: kafka-connect
     container_name: kafka-connect
     networks:
-      - es-network
+      - es-network 
     ports:
       - 8083:8083
     environment:
@@ -91,129 +94,113 @@ services:
       - kafka
       - schema-registry
 
-  #control-center:
-  #  image: confluentinc/cp-enterprise-control-center:5.4.0
-  #  hostname: control-center
-  #  container_name: control-center
-  #  depends_on:
-  #    - zookeeper
-  #    - kafka
-  #   - schema-registry
-  #  ports:
-  #    - 9021:9021
-  #  environment:
-  #    CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:9092
-  #    CONTROL_CENTER_ZOOKEEPER_CONNECT: zookeeper:2181
-  #    CONTROL_CENTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-  #    CONTROL_CENTER_REPLICATION_FACTOR: 1
-  #    CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-  #    CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
- #     CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-  #    PORT: 9021
-
+  
   searchservice:
     hostname: searchservice
     image: ayoubdali/searchservice:0.0.3-SNAPSHOT
     container_name: searchservice
     networks:
-      - es-network
+      - es-network 
           #ipv4_address: 172.21.0.12
-    ports:
-      - 8080:8080
+    #ports:
+    #  - 8070:8080
     restart: always
     depends_on:
       - elasticsearch
-      - reverseproxy
-    labels:
-      - "traefik.frontend.rule: PathPrefixStrip:/subscriber"
-      - "traefik.port: 8080"
+    expose:
+      - "8070"
   
   subscriber-service:
     hostname: subscriber-service
-    image: ayoubdali/subscriberservice:0.0.4-SNAPSHOT
+    image: subscriber-service:0.0.5-SNAPSHOT
     container_name: subscriber-service
     
     networks:
       - es-network 
           #ipv4_address: 172.21.0.13
-    ports:
-      - 8090:8090
+   # ports:
+   #   - 8090:8090
     restart: always
     depends_on:
       - mongo1
       - mongo2
-      - reverseproxy
-    labels:
-      - "traefik.frontend.rule: PathPrefixStrip:localhost/api"
-      - "traefik.port: 8090"
-
+    expose:
+      - "8090"  
 
 
 
 
   searchappfront:
     hostname: searchappfront
-    image: ayoubdali/frontservice:0.6.0
+    image: searchappfront:latest
     container_name: searchappfront
     networks:
-      - es-network
+      - es-network 
     #ports:
-    #  - 80:80
+    #  - 4200:80
     restart: always
     depends_on:
       - subscriber-service
       - searchservice
-      - reverseproxy
-    labels:
-      - "traefik.frontend.rule=PathPrefix:/"
-      - "traefik.enable=true"
-      - "traefik.port=80"
-   
-  reverseproxy:  # see https://docs.traefik.io/#the-traefik-quickstart-using-docker
-    image: traefik:v1.4
-    command: --docker
-    ports:
-      - "80:80"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    expose:
+      - "4200"  
+
+
+  reverseproxy:
+    image: nginx:0.0.9
     networks:
-      - es-network  
+      - es-network 
+    ports:
+      - 80:80
+    links:
+      - searchappfront:searchappfront
+      - subscriber-service:subscriber-service
+      - searchservice:searchservice
+
   # MongoDB Replica Set
   mongo1:
     hostname: mongo1
     image: mongo
     container_name: mongo1
     networks:
-      - es-network
+      - es-network 
     ports:
       - 27018:27017
     restart: always
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+
+
+
+  
 
   mongo2:
     hostname: mongo2
     image: mongo
     container_name: mongo2
     networks:
-      - es-network
+      - es-network 
     ports:
       - 27017:27017
     restart: always
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+  
 
-
-  cerebro:
-    hostname: cerebro
-    image: lmenezes/cerebro 
-    container_name: cerebro
-    networks:
-      - es-network
-    ports:
-      - 9001:9000
-    restart: always
+#  cerebro:
+#    hostname: cerebro
+#    image: lmenezes/cerebro 
+#    container_name: cerebro
+#    networks:
+#      - es-network
+#    ports:
+#      - 9001:9000
+#    restart: always
   
 
 
 networks:
   es-network:
     attachable: true
+    external: true
+  traefik:
+    external: true
+  
