@@ -112,7 +112,7 @@ services:
   
   subscriber-service:
     hostname: subscriber-service
-    image: subscriber-service:0.0.5-SNAPSHOT
+    image: ayoubdali/subscriber-service:0.0.5-SNAPSHOT
     container_name: subscriber-service
     
     networks:
@@ -132,7 +132,7 @@ services:
 
   searchappfront:
     hostname: searchappfront
-    image: searchappfront:latest
+    image: ayoubdali/searchappfront:0.6.5
     container_name: searchappfront
     networks:
       - es-network 
@@ -151,7 +151,7 @@ services:
     networks:
       - es-network 
     ports:
-      - 80:80
+      - 8080:80
     links:
       - searchappfront:searchappfront
       - subscriber-service:subscriber-service
