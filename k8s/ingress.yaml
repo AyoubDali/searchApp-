@@ -13,3 +13,7 @@
          backend:
            serviceName: searchappfront
            servicePort: 31100
+       - path: /api
+         backend:
+           serviceName: subscriberservice
+           servicePort: 8090    
