@@ -60,14 +60,14 @@ kind: Service
 metadata:
   name: searchappfront
 spec:
-  type: NodePort
+  #type: NodePort
   selector:
     app: searchappfront
   ports:
   - protocol: TCP
     port: 80
     #targetPort: 80
-    nodePort: 31100
+    #nodePort: 31100
 
 ---
 apiVersion: apps/v1
