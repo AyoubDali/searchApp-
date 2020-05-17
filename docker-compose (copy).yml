@@ -60,7 +60,7 @@ services:
  
   
   kafka-connect:
-    image:  ayoubdali/kafka-connect:1.0.1
+    image: ayoubdali/kafka-connect
     hostname: kafka-connect
     container_name: kafka-connect
     networks:
@@ -86,9 +86,9 @@ services:
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR:  1
       CONNECT_PLUGIN_PATH: '/usr/share/java,/etc/kafka-connect/jars'
       CONNECT_CONFLUENT_TOPIC_REPLICATION_FACTOR: 1
-    #volumes:
-    #  - /home/xroot/Desktop/docker_env/confluent_env/confluent_on_docker/jars/debez:/etc/kafka-connect/jars
-    #  - /home/xroot/Desktop/docker_env/confluent_env/confluent_on_docker/jsonFile:/etc/kafka-connect/file
+    volumes:
+      - /home/xroot/Desktop/docker_env/confluent_env/confluent_on_docker/jars/debez:/etc/kafka-connect/jars
+      - /home/xroot/Desktop/docker_env/confluent_env/confluent_on_docker/jsonFile:/etc/kafka-connect/file
     depends_on:
       - zookeeper
       - kafka
@@ -112,9 +112,9 @@ services:
   
   subscriber-service:
     hostname: subscriber-service
-    #image:  subscriber-service:0.0.5-SNAPSHOT
-    image: subscriber-service:0.1.4-docker-compose
+    image: ayoubdali/subscriber-service:0.0.5-SNAPSHOT
     container_name: subscriber-service
+    
     networks:
       - es-network 
           #ipv4_address: 172.21.0.13
@@ -132,9 +132,7 @@ services:
 
   searchappfront:
     hostname: searchappfront
-    #image: searchappfront:latest
-    #image: ayoubdali/searchappfront:0.6.5
-    image: searchapp-front:0.7.7
+    image: ayoubdali/searchappfront:0.6.5
     container_name: searchappfront
     networks:
       - es-network 
@@ -149,14 +147,11 @@ services:
 
 
   reverseproxy:
-    image: ayoubdali/nginx:0.2.1
-    # 0.0.9
-    hostname: reverseproxy
-    container_name: reverseproxy
+    image: nginx:0.0.9
     networks:
       - es-network 
     ports:
-      - 80:80
+      - 8080:80
     links:
       - searchappfront:searchappfront
       - subscriber-service:subscriber-service
@@ -189,6 +184,18 @@ services:
     restart: always
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
   
+
+#  cerebro:
+#    hostname: cerebro
+#    image: lmenezes/cerebro 
+#    container_name: cerebro
+#    networks:
+#      - es-network
+#    ports:
+#      - 9001:9000
+#    restart: always
+  
+
 
 networks:
   es-network:
