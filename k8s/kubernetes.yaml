@@ -15,23 +15,25 @@ spec:
     spec:
       containers:
       - name: searchservice
-        image: ayoubdali/searchservice:0.1.9-SNAPSHOT
+        image: ayoubdali/searchservice:0.2.0-k8s
         ports:
-        - containerPort: 8070
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: searchservice
 spec:
-  type: NodePort
+  #type: NodePort
   selector:
     app: searchservice
   ports:
   - protocol: TCP
-    port: 8070
+   # Port accessible inside cluster
+    port: 80
+   # Port to forward to inside the pod
     targetPort: 8070
-    nodePort: 31000
+    #nodePort: 31000
 
 ---
 apiVersion: apps/v1
@@ -51,7 +53,7 @@ spec:
     spec:
       containers:
       - name: searchappfront
-        image: ayoubdali/searchappfront:0.6.5
+        image: ayoubdali/searchapp-front:0.7.8
         ports:
         - containerPort: 80
 ---
@@ -66,8 +68,8 @@ spec:
   ports:
   - protocol: TCP
     port: 80
-    #targetPort: 80
-    #nodePort: 31100
+    targetPort: 80
+    #nodePort: 31103
 
 ---
 apiVersion: apps/v1
@@ -87,20 +89,20 @@ spec:
     spec:
       containers:
       - name: subscriberservice
-        image: ayoubdali/subscriber-service:0.1.0-SNAPSHOT 
+        image: ayoubdali/subscriber-service:0.1.5-k8s
         ports:
-        - containerPort: 8090
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: subscriberservice
 spec:
-  type: NodePort
+  #type: NodePort
   selector:
     app: subscriberservice
   ports:
   - protocol: TCP
-    port: 8090
-    #targetPort: 80
-    nodePort: 31102
+    port: 80
+    targetPort: 8090
+    #nodePort: 31102
