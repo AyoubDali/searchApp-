@@ -1,0 +1,103 @@
+
+1- start minikube
+	minikube start
+
+2- enable ingress 
+	minikube addons enable ingress
+
+3- install helm package
+	
+	curl https://raw.githubusercontent.com/kubernetes/Helm/master/scripts/get > get_Helm.sh
+	chmod 700 get_Helm.sh
+	./get_Helm.sh
+	helm init
+
+==> if helm container didnt start, reset it using this commands 
+	kubectl delete deployment tiller-deploy -n kube-system
+	kubectl delete service tiller-deploy -n kube-system	
+	kubectl delete secret tiller-secret -n kube-system
+
+4- verify if the ingress and helm tiller are running
+	kubectl -n kube-system get pods
+
+
+5- install mongodb replicat set using helm
+	helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+	helm install --name my-release stable/mongodb-replicaset  --set fullnameOverride=mongo --set persistentVolume.enabled=false
+
+
+6- install elasticsearch using helm
+	helm install --name elasticsearch elastic/elasticsearch --set imageTag=6.8.6 --set replicas=1 --set minimumMasterNodes=1 --set 	 fullnameOverride=elasticsearch
+
+PS: I defined only one ES replicat to save ressource, we need at least 2 replicats in a production env 
+
+7- install kafka suit using helm
+
+	git clone https://github.com/confluentinc/cp-helm-charts.git
+	helm install --name cp -f values.yaml cp-helm-charts --set cp-ksql-server.enabled=false --set cp-control-center.enabled=false
+
+PS: the values.yaml file contains a custom kafka-connect container shipped with mongodb and elasticsearch source and sink connectors
+
+==> if problem restart helm using
+	kubectl delete --namespace kube-system svc tilhelm del --purge my-releaseler-deploy
+	kubectl delete --namespace kube-system deploy tiller-deploy
+	kubectl create serviceaccount --namespace kube-system tiller
+	kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+	kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+	helm init --service-account tiller --upgrade
+
+8- clone github repo 
+	git clone https://github.com/AyoubDali/searchApp-
+
+9- start the ingress container
+	kubectl apply -f ingress.yaml
+   
+	PS:add annuaire.test 172.17.0.2  host and ip address to etc/hosts folder with root privelges 
+	172.17.0.2 is the minikube ip address ( run minikupe ip )
+
+10- start the rest of the containers defined in the kubernetes.yaml file
+	kubectl apply -f kubernetes.yaml
+
+11- expose kafka-connect port to init connectors
+	 kubectl port-forward kafka-connect_id  8083:8083
+	
+12- start source connector
+	
+curl -X POST \
+  -H "Content-Type: application/json" \
+  --data '{ "name": "mongo-source", "config": { "connector.class": "io.debezium.connector.mongodb.MongoDbConnector",
+     "mongodb.hosts": "mongo:27017", 
+         "mongodb.name": "mongoSource","transforms":"extractValuefromStruct",
+"transforms.extractValuefromStruct.type":"org.apache.kafka.connect.transforms.ExtractField$Key",
+"transforms.extractValuefromStruct.field":"id" } }' \
+  http://localhost:8083/connectors
+	
+ps: change the ip address with kafka-connect
+
+13- verify if the connector is successfuly started
+	kubectl logs kafka-connect_ip  cp-kafka-connect-server
+
+14-start elasticsearch sink connector
+
+	curl -X POST -H "Content-Type: application/json"   --data '{ "name": "sink", "config": { "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector", "connection.url": "http://elasticsearch:9200", "type.name": "subscriber", "topics": "mongoSource.elasticsearchApp.subscriber","schema.ignore": "true","behavior.on.null.values": "delete","key.ignore": "false"    } }
+'   http://localhost:8083/connectors
+
+
+
+15- visit annuaire.test 
+
+
+
+
+for developpment purpose:
+
+
+16 - init db with annuaire.test/api/test/initResources
+
+
+15- expose elasticsearch port and use celebro to monitor es cluster status
+
+	 kubectl port-forward es_id  9200:9200
+
+
+

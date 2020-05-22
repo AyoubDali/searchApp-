@@ -32,7 +32,7 @@ spec:
    # Port accessible inside cluster
     port: 80
    # Port to forward to inside the pod
-    targetPort: 8070
+    targetPort: 8080
     #nodePort: 31000
 
 ---
@@ -89,7 +89,7 @@ spec:
     spec:
       containers:
       - name: subscriberservice
-        image: ayoubdali/subscriber-service:0.1.5-k8s
+        image: ayoubdali/subscriber-service:0.1.7-k8s
         ports:
         - containerPort: 80
 ---
